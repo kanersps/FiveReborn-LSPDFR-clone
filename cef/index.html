@@ -1,0 +1,171 @@
+<head>
+	<script src="jquery.js" type="text/javascript"></script>
+	<script src="profile.js" type="text/javascript"></script>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:light,regular,medium,thin,italic,mediumitalic,bold" title="roboto">
+	<script>
+		var move_vehicle = false;
+		var ped_options = true;
+		var current_option = 0;
+		
+		var cur_ped = ""
+		var cur_profiles = {}
+	
+		window.onload = function(e){ 
+			document.addEventListener("keydown", keyDownTextField, false);
+
+			function keyDownTextField(e) {
+				var keyCode = e.keyCode;
+				
+				if(move_vehicle == true){
+					// Move vehicle
+					if(keyCode == 38)
+						$.post('http://cop/move', JSON.stringify({direction:"forward"}))
+					else if(keyCode == 39)
+						$.post('http://cop/move', JSON.stringify({direction:"right"}))
+					else if(keyCode == 40)
+						$.post('http://cop/move', JSON.stringify({direction:"backward"}))
+					else if(keyCode == 37)
+						$.post('http://cop/move', JSON.stringify({direction:"left"}))
+					else if(keyCode == 16){
+						$.post('http://cop/close', JSON.stringify({message:"Manual movement mode exited."}))
+						move_vehicle = false
+					}
+					else if(keyCode == 219)
+						$.post('http://cop/move', JSON.stringify({direction:"rotate", amount: 2}))
+					else if(keyCode == 221)
+						$.post('http://cop/move', JSON.stringify({direction:"rotate", amount: -2}))
+				}else if(ped_options == true){
+					if(keyCode == 38){
+						// Up
+						if(current_option - 1 < 0)
+							return
+						$(".opt").eq(current_option).removeClass("selected")
+						$(".opt").eq(current_option).addClass("options")
+						current_option -= 1;
+						$(".opt").eq(current_option).addClass("selected")
+						$(".opt").eq(current_option).removeClass("options")
+					}
+					else if(keyCode == 39){
+						// Select
+						if(current_option == 0){
+							$("#talk_menu_arrested").css("opacity", 0)
+							$("#talk_menu_arrested_info_running").css("opacity", 1)
+							
+							
+							
+							$("#ped-name").text(cur_profiles[cur_ped].name)
+							$("#ped-income").text(cur_profiles[cur_ped].job.income)
+							$("#ped-job").text(cur_profiles[cur_ped].job.name)
+							$("#ped-warrant").text(cur_profiles[cur_ped].warrant)
+							
+							setTimeout(function(){
+								$("#talk_menu_arrested_info_running").css("opacity", 0)
+								$("#talk_menu_arrested_info_info").css("opacity", 1)
+								$("#talk_menu_arrested_info").css("opacity", 1)
+							}, 100)
+						}
+					}
+					else if(keyCode == 40){
+						// Down
+						if(current_option + 2 > $(".opt").length)
+							return
+							
+						$(".opt").eq(current_option).removeClass("selected")
+						$(".opt").eq(current_option).addClass("options")
+						current_option += 1;
+						$(".opt").eq(current_option).addClass("selected")
+						$(".opt").eq(current_option).removeClass("options")
+					}
+					else if(keyCode == 37){
+						if($("#talk_menu_arrested_info").css("opacity") == 0){
+							// Close
+							$.post('http://cop/close', JSON.stringify({message:false}))
+							$("#talk_menu_arrested").css("opacity", 0)
+							ped_options = false
+							current_option = 0;
+						}else{
+							$("#talk_menu_arrested").css("opacity", 1)
+							$("#talk_menu_arrested_info").css("opacity", 0)
+						}
+					}
+				}
+			}
+		}
+	</script>
+	
+	<style>
+		body {
+			font-family: 'Roboto';
+		}
+	
+		.selected {
+			background: white;
+			color: black;
+			 text-indent: 5px;
+		}
+		
+		.options {
+			background: black;
+			color: white;
+			text-indent: 5px;
+		}
+	</style>
+</head>
+<body>
+	<div id="talk_menu_arrested" style="opacity: 0; position: absolute; color: white; top: 150px; right: 100px; width: 200px; background: rgba(0, 0, 0, 0.8)">
+		<center style="padding: 4px;"><b>Options</b></center>
+		<div class="selected opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Request ID & Run name</div><br>
+		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Breathalyzer</div><br>
+		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Drug test</div><br>
+		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Search</div><br>
+		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Follow</div><br>
+	</div>
+	<div id="talk_menu_arrested_info_running" style="opacity: 0; padding: 4px; z-index: 99; color: white; position: absolute; top: 50px; right: 100px; width: 200px; background: rgba(0, 0, 0, 0.8)">Running name...</div>
+	<div id="talk_menu_arrested_info" style="opacity: 0; padding: 5px; word-wrap:break-word; position: absolute; color: white; top: 50px; right: 100px; width: 200px; background: rgba(0, 0, 0, 0.8)">
+		<div id="talk_menu_arrested_info_info" style="opacity: 0">
+			<center><b>Personal info</b></center>
+			<b style='color: yellow'>Name:</b> <span id="ped-name">Jason Born</span> <br>
+			<b style='color: yellow'>Occupation:</b> <span id="ped-job">Cleaner</span> <br>
+			<b style='color: yellow'>Income:</b> <span id="ped-income">$25.000 yearly</span> <br>
+			<b style='color: yellow'>Warrants:</b> <span id="ped-warrant">None</span> <br>
+			<small style="text-align: center;">Press the LEFT ARROW KEY to go back.</small>
+		</div>
+	</div>
+	
+	<script>
+		// NUI Callback
+		window.addEventListener('message', function(event){
+			var item = event.data;
+					
+		if(item.open_talk == 1){
+			if(item.t == "arrested"){
+				cur_ped = item.ped
+				
+				if(cur_profiles[cur_ped] == null){
+					if(item.sex == true)
+						item.sex = 0
+					else
+						item.sex = 1
+					cur_profiles[cur_ped] = getRandomProfile(item.sex)
+				}
+				
+				if(cur_profiles[cur_ped] == undefined){
+					cur_profiles[cur_ped] = generateRandomProfile()
+				}
+				
+				$("#talk_menu_arrested").css("opacity", 1)
+			}
+			ped_options = true
+		}
+		if(item.close_all == 1){
+			$("#talk_menu_arrested").css("opacity", 0)
+			$("#talk_menu_arrested_info_running").css("opacity", 1)
+			$("#talk_menu_arrested_info_info").css("opacity", 0)
+			ped_options = false
+		}
+		if(item.move_vehicle == 1){
+			move_vehicle = true
+		}
+		})
+	</script>
+</body>
