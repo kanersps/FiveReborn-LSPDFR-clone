@@ -7,6 +7,10 @@ myPlayer = GetPlayerId()
 Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(0)
+		if(myPlayer == -1)then
+			myPlayer = GetPlayerId()
+		end
+		
 		if IsControlJustReleased(0, 51) then	
 			
 			if(IsPedInAnyVehicle(GetPlayerPed(-1), false))then
