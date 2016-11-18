@@ -1,19 +1,19 @@
-selectedVehicle = nil
+selectedVehicle = {}
 local pulledOver = false
 pulledOverPed = nil
 local pulledOverVehicles = {}
+myPlayer = GetPlayerId()
 
 Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(0)
-		
-		if IsControlJustReleased(0, 51) then
+		if IsControlJustReleased(0, 51) then	
+			
 			if(IsPedInAnyVehicle(GetPlayerPed(-1), false))then
-				if(selectedVehicle ~= nil)then
-					FreezeEntityPosition(selectedVehicle, false)
-					TriggerServerEvent("pulloverCanceled", selectedVehicle)
-					selectedVehicle = nil
+				if(selectedVehicle[myPlayer] ~= nil)then
+					TriggerServerEvent("pulloverCanceled")
 					ShowNotification("Pullover cancelled.")
+					
 					
 					pulledOverPed = nil
 					pulledOver = false
@@ -24,10 +24,7 @@ Citizen.CreateThread(function()
 						pulledOver = false
 						pulledOverPed = nil
 						if(closest ~= nil and closest ~= false)then
-							if(selectedVehicle ~= nil)then
-								selectedVehicle = nil
-							end
-							selectedVehicle = closest
+							TriggerServerEvent("selectedVehicle")
 							ShowNotification("Vehicle selected, press L-SHIFT to pullover or E to cancel pullover.")
 						end
 					else
@@ -36,7 +33,7 @@ Citizen.CreateThread(function()
 			end
 		end
 		if IsControlJustReleased(0, 21)then
-			if(selectedVehicle ~= nil)then
+			if(selectedVehicle[myPlayer] ~= nil)then
 				
 				if(IsPedInAnyVehicle(GetPlayerPed(-1), false))then
 					if(pulledOver == true)then
@@ -46,7 +43,8 @@ Citizen.CreateThread(function()
 							move_vehicle = 1
 						})
 					else
-						TriggerServerEvent("pulloverVehicle", selectedVehicle)
+						local pc = GetOffsetFromEntityInWorldCoords(selectedVehicle[myPlayer], 5.0, 35.0, 0.0)
+						TriggerServerEvent("pulloverVehicle", pc['x'], pc['y'], pc['z'])
 					end
 				end
 			end
@@ -54,70 +52,82 @@ Citizen.CreateThread(function()
 	end
 end)
 
-RegisterNetEvent("pulledOver")
-AddEventHandler("pulledOver", function(entity)	
-	local park = GetOffsetFromEntityInWorldCoords(entity, 4.0, 15.0, 0.0)
-	if(GetEntitySpeed(entity) > 25)then
-		park = GetOffsetFromEntityInWorldCoords(entity, 4.0, 65.0, 0.0)
-	end
-	local heading = GetEntityHeading(entity)
-	TaskVehiclePark(GetPedInVehicleSeat(entity, -1), entity, park.x, park.y, park.z, 1, 0, 30.0, true)
-	Citizen.CreateThread(function()
-		Citizen.Wait(3500)
-		SetEntityCoords(entity, park.x, park.y, park.z)
-		SetEntityHeading(entity, heading)
-		SetVehicleOnGroundProperly(entity)
-		FreezeEntityPosition(entity, true)
-		pulledOverPed = GetPedInVehicleSeat(entity, -1)
-	end)
+RegisterNetEvent("selectedVehicle")
+AddEventHandler("selectedVehicle", function(owner)
+	local pc = GetEntityCoords(GetPlayerPed(GetPlayerFromServerId(owner)))
+	local entity = GetClosestVehicle(pc['x'], pc['y'], pc['z'], 20.0, 0, 70)
+	
+	TriggerServerEvent("print", "Myplayer: " .. tostring(myPlayer) .. ", " .. tostring(owner))
+	
+	selectedVehicle[owner] = entity
 end)
 
-RegisterNetEvent("pulloverDone")
-AddEventHandler("pulloverDone", function(entity)	
-	pulledOverVehicles[entity] = true
-end)		
-
-RegisterNetEvent("pulloverCanceled")
-AddEventHandler("pulloverCanceled", function(entity)
-	pulledOverVehicles[entity] = nil
-	SetVehicleEngineOn(entity, true, true, true)
-	TaskSetBlockingOfNonTemporaryEvents(GetPedInVehicleSeat(entity, -1), false)
-	SetVehicleSteerBias(entity, 0.0)
+RegisterNetEvent("pullingOver")
+AddEventHandler("pullingOver", function(owner, x, y, z)		
+	local entity = selectedVehicle[owner]
+	
+	TaskVehicleDriveToCoord(GetPedInVehicleSeat(entity, -1), entity, x, y, z, 40, 1, GetEntityModel(entity), 2883621, 0, -1)
 end)
 
 RegisterNetEvent("pulledOverOwner")
-AddEventHandler("pulledOverOwner", function()
-	pulledOver = true
-	pulledOverPed = GetPedInVehicleSeat(selectedVehicle, -1)
+AddEventHandler("pulledOverOwner", function(owner, x, y, z)		
+	local entity = selectedVehicle[myPlayer]
+	local pc = GetOffsetFromEntityInWorldCoords(selectedVehicle[myPlayer], 5.0, 25.0, 0.0)
+	SetEntityCoords(entity, pc.x, pc.y, pc.z)
+	SetVehicleOnGroundProperly(selectedVehicle[myPlayer])
+	FreezeEntityPosition(selectedVehicle[myPlayer], true)
+	
+		pulledOverVehicles[selectedVehicle[myPlayer]] = true
+	
+	pulledOverPed = GetPedInVehicleSeat(selectedVehicle[myPlayer], -1)
 end)
+
+RegisterNetEvent("pulledOver")
+AddEventHandler("pulledOver", function(owner, x, y, z)
+	if(owner == myPlayer)then
+		SetEntityCoords(selectedVehicle[owner], x, y, z)
+		pulledOver = true
+		pulledOverPed = GetPedInVehicleSeat(selectedVehicle[myPlayer], -1)
+	end
+
+	FreezeEntityPosition(selectedVehicle[owner], true)
+	pulledOverVehicles[selectedVehicle[owner]] = true
+	
+	FreezeEntityPosition(selectedVehicle[owner], true)
+end)		
+
+RegisterNetEvent("pulloverCanceled")
+AddEventHandler("pulloverCanceled", function(owner)
+	pulledOverVehicles[selectedVehicle[owner]] = nil
+	SetVehicleEngineOn(selectedVehicle[owner], true, true, true)
+	TaskSetBlockingOfNonTemporaryEvents(GetPedInVehicleSeat(selectedVehicle[owner], -1), false)
+	SetVehicleSteerBias(selectedVehicle[owner], 0.0)
+	FreezeEntityPosition(selectedVehicle[owner], false)
+	selectedVehicle[owner] = nil
+end)	
 
 RegisterNetEvent("droveOff")
-AddEventHandler("droveOff", function(e)
-	FreezeEntityPosition(e, false)
-end)
-
-RegisterNetEvent("droveOffOwner")
-AddEventHandler("droveOffOwner", function()
-	selectedVehicle = nil
-	pulledOverPed = nil
-	pulledOver = false
+AddEventHandler("droveOff", function(owner)
+	FreezeEntityPosition(selectedVehicle[owner], false)
+	selectedVehicle[owner] = nil
 end)
 
 Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(0)		
-		if(selectedVehicle ~= nil)then
+		if(selectedVehicle[myPlayer] ~= nil)then
 			local playerLoc = GetEntityCoords(GetPlayerPed(-1))
-			local vehLoc = GetEntityCoords(selectedVehicle)
+			local vehLoc = GetEntityCoords(selectedVehicle[myPlayer])
 			if(Vdist(vehLoc['x'], vehLoc['y'], vehLoc['z'], playerLoc['x'], playerLoc['y'], playerLoc['z']) > 100.0)then
-				TriggerServerEvent("droveOff", selectedVehicle)
+				TriggerServerEvent("droveOff", selectedVehicle[myPlayer])
 			end
+			
+			DrawMarker(0, vehLoc['x'], vehLoc['y'], vehLoc['z'] + 1.8, 0, 0, 0, 0, 0, 0, 0.5001, 0.5001, 0.5001, 255,255,0,255, 0,0, 0,0)
 		end
 		for k,v in pairs(pulledOverVehicles) do
+			FreezeEntityPosition(k, true)
 			SetVehicleEngineOn(k, false, true, true)
 			TaskSetBlockingOfNonTemporaryEvents(GetPedInVehicleSeat(k, -1), true)
-			SetVehicleSteerBias(k, 0.0)
-			FreezeEntityPosition(k, true)
 		end
 	end
 end)
@@ -125,32 +135,37 @@ end)
 RegisterNUICallback('move', function(data, cb)
 	if(pulledOver == false or selectedVehicle == false or IsPedInAnyVehicle(GetPlayerPed(-1)) == false)then
 	else
-		local newYaw = GetEntityHeading(selectedVehicle)
-		local park = GetOffsetFromEntityInWorldCoords(selectedVehicle, 0.0, 0.0, 0.0)
-		if(data.direction == "left")then
-			park = GetOffsetFromEntityInWorldCoords(selectedVehicle, -0.5, 0.0, 0.0)
-		elseif(data.direction == "right")then
-			park = GetOffsetFromEntityInWorldCoords(selectedVehicle, 0.5, 0.0, 0.0)
-		elseif(data.direction == "forward")then
-			park = GetOffsetFromEntityInWorldCoords(selectedVehicle, 0.0, 0.5, 0.0)		
-		elseif(data.direction == "backward")then
-			park = GetOffsetFromEntityInWorldCoords(selectedVehicle, 0.0, -0.5, 0.0)
-		elseif(data.direction == "rotate")then
-			newYaw = GetEntityHeading(selectedVehicle) + data.amount
+		if(data.amount == nil)then
+			data.amount = 0
 		end
-
-		TriggerServerEvent("moveVehicle", selectedVehicle, park.x, park.y, park.z, newYaw)
+		
+		local park = GetOffsetFromEntityInWorldCoords(selectedVehicle[myPlayer], 0.0, 0.0, 0.0)
+		local yaw = GetEntityHeading(selectedVehicle[myPlayer])
+		local direction = data.direction
+		if(direction == "forward")then
+			park = GetOffsetFromEntityInWorldCoords(selectedVehicle[myPlayer], 0.0, 0.5, 0.0)
+		elseif(direction == "backward")then
+			park = GetOffsetFromEntityInWorldCoords(selectedVehicle[myPlayer], 0.0, -0.5, 0.0)
+		elseif(direction == "left")then
+			park = GetOffsetFromEntityInWorldCoords(selectedVehicle[myPlayer], -0.5, 0.0, 0.0)
+		elseif(direction == "right")then
+			park = GetOffsetFromEntityInWorldCoords(selectedVehicle[myPlayer], 0.5, 0.0, 0.0)
+		elseif(direction == "rotate")then
+			yaw = yaw + data.amount
+		end
+		
+		TriggerServerEvent("moveVehicle", park.x, park.y, park.z, yaw)
 	end
 end)
 
 RegisterNetEvent("pulledOverMoveVehicle")
-AddEventHandler("pulledOverMoveVehicle", function(ent, x, y, z, yaw)
-	SetNetworkIdCanMigrate(NetworkGetNetworkIdFromEntity(ent), false)
-	FreezeEntityPosition(ent, false)
-	SetEntityCoords(ent, x, y, z)
-	SetVehicleOnGroundProperly(ent)
-	SetEntityHeading(ent, yaw)
-	FreezeEntityPosition(ent, true)
+AddEventHandler("pulledOverMoveVehicle", function(owner, x, y, z, yaw)
+	pulledOverVehicles[selectedVehicle[owner]] = nil
+	FreezeEntityPosition(selectedVehicle[owner], false)
+	SetEntityCoords(selectedVehicle[owner], x, y, z)
+	SetEntityHeading(selectedVehicle[owner], yaw)
+	FreezeEntityPosition(selectedVehicle[owner], true)
+	pulledOverVehicles[selectedVehicle[owner]] = true
 end)
 
 RegisterNUICallback('close', function(data, cb)

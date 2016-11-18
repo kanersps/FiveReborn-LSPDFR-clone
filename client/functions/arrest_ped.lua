@@ -11,24 +11,29 @@ Citizen.CreateThread(function()
 		
 		local entity = Citizen.InvokeNative(0x2975C866E6713290, PlayerId(), Citizen.PointerValueInt(), Citizen.ResultAsInteger(entity))
 		
+			
+		
 		if IsControlJustReleased(0, 51) then
-			if(arresting[entity] == true)then
-				TriggerServerEvent("COPArrestedPed", entity)
-			else
-				if(GetEntityType(entity) == 1)then	
-					if(IsPedPlayerPed(entity) == true)then
-						return
+			if(IsPedDeadOrDying(entity, 1) ~= 1)then
+				if(arresting[entity] == true)then
+					TriggerServerEvent("COPArrestedPed", entity)
+					
+				else
+					if(GetEntityType(entity) == 1)then	
+						if(IsPedPlayerPed(entity) ~= true)then
+							TriggerServerEvent("COPArrestingPed", entity)
+						end
 					end
-					TriggerServerEvent("COPArrestingPed", entity)
 				end
 			end
 		end
 		if(first == true and GetEntityType(entity) == 1)then
-			if(IsPedPlayerPed(entity) == true)then
-				return
+			if(IsPedDeadOrDying(entity, 1) ~= 1)then
+				if(IsPedPlayerPed(entity) ~= true)then
+					first = false
+					TriggerEvent("notify", "Press E to attempt to intimidate.")
+				end
 			end
-			first = false
-			TriggerEvent("notify", "Press E to attempt to intimidate.")
 		else
 			if(GetEntityType(entity) ~= 1 and first == false and firstTimer == nil)then
 				firstTimer = true
@@ -63,26 +68,46 @@ AddEventHandler("notify", function(msg)
 end)
 
 RegisterNetEvent("arrestPed")
-AddEventHandler("arrestPed", function(entity)	
-	SetNetworkIdCanMigrate(NetworkGetNetworkIdFromEntity(entity), false)
+AddEventHandler("arrestPed", function(owner)	
+
+	local entity = Citizen.InvokeNative(0x2975C866E6713290, GetPlayerFromServerId(owner), Citizen.PointerValueInt(), Citizen.ResultAsInteger(entity))
 	if(IsPedPlayerPed(entity) == true)then
 		return
 	end
 	arresting[entity] = nil
 	arrested[entity] = true
 	
+	TaskSetBlockingOfNonTemporaryEvents(entity, true)
 	playAnim(entity, "random@arrests@busted","enter")
 	Citizen.CreateThread(function()
 		Citizen.Wait(1600)
 		playAnim(entity, "random@arrests@busted","idle_a", true)
 		Citizen.Wait(1600)
-		FreezeEntityPosition(entity, true)
 	end)
 end)
 
 RegisterNetEvent("unarrestingPed")
 AddEventHandler("unarrestingPed", function(entity)
 	arresting[entity] = nil
+	
+end)
+
+RegisterNetEvent("releasePed")
+AddEventHandler("releasePed", function(ent)
+	arrested[tonumber(ent)] = nil
+	arresting[tonumber(ent)] = nil
+	
+	TaskSetBlockingOfNonTemporaryEvents(tonumber(ent), true)
+	
+	ClearPedTasksImmediately(tonumber(ent))
+	TaskPlayAnim(tonumber(ent), "random@arrests@busted","idle_a", 8, -4, 100, 0.1, 0, false, false, true)
+	
+	if(selectedVehicle[myPlayer] ~= nil)then
+		TriggerServerEvent("pulloverCanceled")
+	else
+		
+	end
+	
 end)
 
 Citizen.CreateThread(function()
@@ -99,8 +124,7 @@ Citizen.CreateThread(function()
 		end
 		for k, v in pairs(arrested) do
 			if(GetEntityType(k) == 1)then	
-				if(not IsPedFatallyInjured(k))then
-					
+				if(not IsPedFatallyInjured(k))then					
 					TaskStandStill(k, 2000)
 				end
 			end
@@ -125,15 +149,19 @@ function pedArresting(ped)
 end
 
 function playAnim(ped, animdict, anim, infinite)
-
-	Citizen.CreateThread(function()					
+	Citizen.CreateThread(function()
 		while(not HasAnimDictLoaded(animdict))do
 			RequestAnimDict(animdict)
 			Citizen.Wait(0)
+			
 		end
 		
-		local flag = 0
-
-		TaskPlayAnim(ped, animdict, anim,8, -4, -1, 0, 0, false, false, true)
+						
+		TaskPlayAnim(tonumber(ped), animdict, anim, 8.0, 0.0, -1, 0, 0, 1, 1, 1)
 	end)
 end
+
+RegisterNUICallback('release_ped', function(data, cb)
+	TriggerServerEvent("releasePed", data.ped)
+	SetNuiFocus(false)
+end)

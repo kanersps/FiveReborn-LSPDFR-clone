@@ -46,8 +46,10 @@
 						$(".opt").eq(current_option).removeClass("options")
 					}
 					else if(keyCode == 39){
+						console.log($(".opt").eq(current_option).text())
+					
 						// Select
-						if(current_option == 0){
+						if($(".opt").eq(current_option).text() == "Request ID & Run name"){
 							$("#talk_menu_arrested").css("opacity", 0)
 							$("#talk_menu_arrested_info_running").css("opacity", 1)
 							
@@ -62,7 +64,19 @@
 								$("#talk_menu_arrested_info_running").css("opacity", 0)
 								$("#talk_menu_arrested_info_info").css("opacity", 1)
 								$("#talk_menu_arrested_info").css("opacity", 1)
-							}, 100)
+							}, 800)
+						}
+						if($(".opt").eq(current_option).text() == "Release"){
+							$.post('http://cop/release_ped', JSON.stringify({ped:cur_ped}))
+							// Close
+							$.post('http://cop/close', JSON.stringify({message:false}))
+							$("#talk_menu_arrested").css("opacity", 0)
+							ped_options = false
+							$(".opt").eq(current_option).removeClass("selected")
+							$(".opt").eq(current_option).addClass("options")
+							current_option = 0;
+							$(".opt").eq(current_option).addClass("selected")
+							$(".opt").eq(current_option).removeClass("options")
 						}
 					}
 					else if(keyCode == 40){
@@ -82,7 +96,11 @@
 							$.post('http://cop/close', JSON.stringify({message:false}))
 							$("#talk_menu_arrested").css("opacity", 0)
 							ped_options = false
+							$(".opt").eq(current_option).removeClass("selected")
+							$(".opt").eq(current_option).addClass("options")
 							current_option = 0;
+							$(".opt").eq(current_option).addClass("selected")
+							$(".opt").eq(current_option).removeClass("options")
 						}else{
 							$("#talk_menu_arrested").css("opacity", 1)
 							$("#talk_menu_arrested_info").css("opacity", 0)
@@ -115,6 +133,8 @@
 	<div id="talk_menu_arrested" style="opacity: 0; position: absolute; color: white; top: 150px; right: 100px; width: 200px; background: rgba(0, 0, 0, 0.8)">
 		<center style="padding: 4px;"><b>Options</b></center>
 		<div class="selected opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Request ID & Run name</div><br>
+		
+		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Release</div><br>
 		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Breathalyzer</div><br>
 		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Drug test</div><br>
 		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Search</div><br>
@@ -148,6 +168,8 @@
 						item.sex = 1
 					cur_profiles[cur_ped] = getRandomProfile(item.sex)
 				}
+				
+				$("#release_arrested").remove();
 				
 				if(cur_profiles[cur_ped] == undefined){
 					cur_profiles[cur_ped] = generateRandomProfile()

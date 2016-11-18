@@ -18,37 +18,52 @@ AddEventHandler("COPArrestedPed", function(ped)
 		arresting[ped] = nil
 		arrested[ped] = true
 		
-		TriggerClientEvent("arrestPed", -1, ped)
+		TriggerClientEvent("arrestPed", -1, source)
 		TriggerClientEvent("notify", source, "Arrested, walk to them and press E for more options.")
 	end
 end)
 
+RegisterServerEvent("releasePed")
+AddEventHandler("releasePed", function(ent)
+	TriggerClientEvent("releasePed", -1, ent)
+	TriggerClientEvent("pulloverCanceled", -1, source)
+end)
+
+RegisterServerEvent("selectedVehicle")
+AddEventHandler("selectedVehicle", function()
+	TriggerClientEvent("selectedVehicle", -1, source)
+end)
+
 RegisterServerEvent("pulloverCanceled")
-AddEventHandler("pulloverCanceled", function(ent)
-	TriggerClientEvent("pulloverCanceled", -1, ent)
+AddEventHandler("pulloverCanceled", function()
+	TriggerClientEvent("pulloverCanceled", -1, source)
 end)
 
 RegisterServerEvent("pulloverVehicle")
-AddEventHandler("pulloverVehicle", function(ent)
-	TriggerClientEvent("notify", source, "Vehicle pulling over.")
-	TriggerClientEvent("pulledOver", -1, ent)
+AddEventHandler("pulloverVehicle", function(x, y, z)
+	TriggerClientEvent("notify", source, "Vehicle pulling over.")	
+	TriggerClientEvent("pullingOver", -1, source, x, y, z)
 	
 	SetTimeout(3500, function()
-		TriggerClientEvent("pulledOverOwner", source)
 		TriggerClientEvent("notify", source, "Not happy with the position? Press L-SHIFT to enable manual movement or press E to cancel pullover.")
-		TriggerClientEvent("pulloverDone", -1, ent)
+		TriggerClientEvent("pulledOver", -1, source, x, y, z)
 	end)
+end)
+
+RegisterServerEvent("print")
+AddEventHandler("print", function(t)
+	print(""..t)
 end)
 
 RegisterServerEvent("droveOff")
 AddEventHandler("droveOff", function(ent)
-	TriggerClientEvent("droveOff", -1, ent)
-	TriggerClientEvent("droveOffOwner", source)
+	print("Cancelled")
+	TriggerClientEvent("droveOff", -1, source)
 end)
 
 RegisterServerEvent("moveVehicle")
-AddEventHandler("moveVehicle", function(ent, x, y, z, ya)
-	TriggerClientEvent("pulledOverMoveVehicle", -1, ent, x, y, z, ya)
+AddEventHandler("moveVehicle", function(x, y, z, yaw)
+	TriggerClientEvent("pulledOverMoveVehicle", -1, source, x, y, z, yaw)
 end)
 
 RegisterServerEvent("COPUnarrestPed")
