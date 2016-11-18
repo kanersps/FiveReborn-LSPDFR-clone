@@ -4,7 +4,6 @@ local arrested = {}
 RegisterServerEvent("COPArrestingPed")
 AddEventHandler("COPArrestingPed", function(ped)
 	if(ped ~= nil and arresting[ped] == nil)then
-		TriggerClientEvent("notify", source, "Press E to arrest.")
 		TriggerClientEvent("arrestingPed", -1, ped)
 		SetTimeout(1500, function()
 			arresting[ped] = true

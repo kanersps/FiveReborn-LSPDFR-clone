@@ -1,5 +1,6 @@
 arresting = {}
 arrested = {}
+hostile = {}
 
 local first = true
 local firstTimer = nil
@@ -50,6 +51,14 @@ end)
 -- Event handlers
 RegisterNetEvent("arrestingPed")
 AddEventHandler("arrestingPed", function(entity)
+	if(chanceBecomeHostile(entity) == true)then
+		hostile[entity] = true
+		ShowNotification("Suspect became hostile!")
+		return
+	end
+	
+	ShowNotification("Press E to arrest.")
+
 	if(IsPedPlayerPed(entity) == true)then
 		return
 	end
@@ -69,7 +78,10 @@ end)
 
 RegisterNetEvent("arrestPed")
 AddEventHandler("arrestPed", function(owner)	
-
+	if(hostile[entity] == true)then
+		return
+	end
+	
 	local entity = Citizen.InvokeNative(0x2975C866E6713290, GetPlayerFromServerId(owner), Citizen.PointerValueInt(), Citizen.ResultAsInteger(entity))
 	if(IsPedPlayerPed(entity) == true)then
 		return
@@ -163,5 +175,12 @@ end
 
 RegisterNUICallback('release_ped', function(data, cb)
 	TriggerServerEvent("releasePed", data.ped)
+	SetNuiFocus(false)
+end)
+
+RegisterNUICallback('arrest_ped', function(data, cb)
+	TriggerServerEvent("releasePed", data.ped)
+	SetEntityCoords(tonumber(data.ped), 0.0, 0.0, 0.0)
+	ShowNotification("Suspect has been picked up.")
 	SetNuiFocus(false)
 end)

@@ -10,15 +10,13 @@ Citizen.CreateThread(function()
 				for key,value in pairs(arrested)do	
 					if(IsPedDeadOrDying(key, 1) == 1)then
 						TriggerServerEvent("COPUnarrestPed", key)
-					else
-					
-				
+					else							
 						if(GetEntityType(key) == 1 and IsPedInAnyVehicle(GetPlayerPed(-1), false) == false)then	
 							local pedLoc = GetEntityCoords(key)
 							local playerLoc = GetEntityCoords(GetPlayerPed(-1))
 							if(Vdist(pedLoc['x'], pedLoc['y'], pedLoc['z'], playerLoc['x'], playerLoc['y'], playerLoc['z']) < 2.0)then
 									
-									SetNuiFocus(true)
+								SetNuiFocus(true)
 								SendNUIMessage({
 									open_talk = 1,
 									sex = IsPedMale(key),

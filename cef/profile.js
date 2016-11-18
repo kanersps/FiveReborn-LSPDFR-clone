@@ -97,13 +97,15 @@ var warrants = [
 	"Hit & Run",
 	"Assault",
 	"Armed robbery",
+	"Mugger",
+	"Loitering",
 ]
 
 var jobs = [
 	{ name:"Cleaner", income: "$25.000 Yearly"},
 	{ name:"CEO", income: "$425.000 Yearly"},
 	{ name:"Shop owner", income: "$45.000 Yearly"},
-	{ name:"FBI Employee", income: "$35.000 Yearly"},
+	{ name:"FIB Employee", income: "$35.000 Yearly"},
 	{ name:"Computer repairman", income: "$25.000 Yearly"},
 	{ name:"Prostitute", income: "$55.000 Yearly"},
 	{ name:"Office worker", income: "$35.000 Yearly"},
@@ -114,6 +116,13 @@ var jobs = [
 	{ name:"S.W.A.T", income: "$45.000 Yearly"},
 	{ name:"Part-time cashier", income: "$15.000 Yearly"},
 	{ name:"Cashier", income: "$27.500 Yearly"},
+	{ name:"Car mechanic", income: "$27.500 Yearly"},
+	{ name:"Private Investigator", income: "$57.500 Yearly"},
+	{ name:"Ammunation Owner", income: "$35.000 Yearly"},
+	{ name:"Programmer", income: "$45.000 Yearly"},
+	{ name:"Amateur Racer", income: "$25.000 Yearly"},
+	{ name:"Pro Racer", income: "$55.000 Yearly"},
+	{ name:"Criminal Informant", income: "<REDACTED>"},
 ]
 
 function getRandomProfile(s, f){

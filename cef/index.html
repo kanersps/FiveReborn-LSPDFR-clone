@@ -78,6 +78,18 @@
 							$(".opt").eq(current_option).addClass("selected")
 							$(".opt").eq(current_option).removeClass("options")
 						}
+						if($(".opt").eq(current_option).text() == "Arrest"){
+							$.post('http://cop/arrest_ped', JSON.stringify({ped:cur_ped}))
+							// Close
+							$.post('http://cop/close', JSON.stringify({message:false}))
+							$("#talk_menu_arrested").css("opacity", 0)
+							ped_options = false
+							$(".opt").eq(current_option).removeClass("selected")
+							$(".opt").eq(current_option).addClass("options")
+							current_option = 0;
+							$(".opt").eq(current_option).addClass("selected")
+							$(".opt").eq(current_option).removeClass("options")
+						}
 					}
 					else if(keyCode == 40){
 						// Down
@@ -138,7 +150,7 @@
 		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Breathalyzer</div><br>
 		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Drug test</div><br>
 		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Search</div><br>
-		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Follow</div><br>
+		<div class="options opt" style=' float: left; padding-top: 2px; padding-bottom: 2px; width: 100%;'>Arrest</div><br>
 	</div>
 	<div id="talk_menu_arrested_info_running" style="opacity: 0; padding: 4px; z-index: 99; color: white; position: absolute; top: 50px; right: 100px; width: 200px; background: rgba(0, 0, 0, 0.8)">Running name...</div>
 	<div id="talk_menu_arrested_info" style="opacity: 0; padding: 5px; word-wrap:break-word; position: absolute; color: white; top: 50px; right: 100px; width: 200px; background: rgba(0, 0, 0, 0.8)">
